@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="星星机">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <title>星星机</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="phone-wrapper">
+        <div class="phone-case">
+            <div class="notch"></div>
+            <div class="screen">
+                <!-- 背景星星层 -->
+                <div id="stars-container"></div>
+                
+
+                <!-- 流星雨按钮 -->
+                <div class="meteor-btn" id="meteor-btn">
+                    <i class="far fa-star"></i>
+                </div>
+
+                <!-- 内容区域 -->
+                <div class="content">
+                    <!-- 顶部头像区域 -->
+                    <div class="header-section">
+                        <div class="avatar-wrapper">
+                            <div class="planet-ring"></div>
+                            <div class="avatar-container" id="avatar-container">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Galaxy&backgroundColor=transparent" alt="用户头像" class="avatar-img" id="avatar-img">
+                                <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 输入框区域 -->
+                    <div class="input-section">
+                        <input type="text" class="star-input" placeholder="记录此刻的星尘...">
+                    </div>
+
+                    <!-- 图标布局区域 -->
+                    <div class="icons-layout">
+                        <!-- 第一部分 -->
+                        <div class="layout-row">
+                            <div class="layout-col left flex-center">
+                                <div class="icon-circle icon-diary" id="icon-diary">
+                                    <i class="fas fa-book-open"></i>
+                                </div>
+                            </div>
+                            <div class="layout-col right flex-column">
+                                <div class="icon-rect icon-heart" id="icon-heart">
+                                    <i class="fas fa-heart-pulse"></i>
+                                </div>
+                                <div class="icon-rect icon-file" id="icon-file">
+                                    <i class="fas fa-folder-open"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第二部分 -->
+                        <div class="layout-row">
+                            <div class="layout-col left flex-column">
+                                <div class="icon-rect icon-worldbook" id="icon-worldbook">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <div class="icon-rect icon-settings" id="icon-settings">
+                                    <i class="fas fa-cog"></i>
+                                </div>
+                            </div>
+                            <div class="layout-col right flex-center">
+                                <div class="icon-circle icon-paw" id="icon-paw">
+                                    <i class="fas fa-paw"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 主设置菜单 -->
+                <div class="settings-page" id="settings-menu">
+                    <div class="settings-header">
+                        <button class="close-btn" id="close-menu-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>设置</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="settings-content menu-content">
+                        <div class="menu-item" id="btn-api-settings">
+                            <div class="menu-icon"><i class="fas fa-code"></i></div>
+                            <span>API 设置</span>
+                            <i class="fas fa-chevron-right arrow"></i>
+                        </div>
+                        <div class="menu-item" id="btn-theme-settings">
+                            <div class="menu-icon"><i class="fas fa-paint-brush"></i></div>
+                            <span>美化设置</span>
+                            <i class="fas fa-chevron-right arrow"></i>
+                        </div>
+                        <div class="menu-item" id="btn-data-settings">
+                            <div class="menu-icon"><i class="fas fa-database"></i></div>
+                            <span>数据</span>
+                            <i class="fas fa-chevron-right arrow"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API 设置页面 -->
+                <div class="settings-page sub-page" id="api-settings-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="back-to-menu-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>API 设置</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="form-group">
+                            <label for="api-url">API URL</label>
+                            <input type="text" id="api-url" placeholder="例如: https://api.openai.com/v1">
+                        </div>
+                        <div class="form-group">
+                            <label for="api-key">API Key</label>
+                            <input type="password" id="api-key" placeholder="sk-...">
+                        </div>
+                        <div class="form-group">
+                            <label>模型</label>
+                            <div class="model-input-group">
+                                <div class="custom-select-wrapper">
+                                    <div class="custom-select" id="model-select-custom">
+                                        <div class="custom-select-trigger">
+                                            <span id="selected-model-text">请选择或拉取模型</span>
+                                            <i class="fas fa-chevron-down arrow"></i>
+                                        </div>
+                                        <div class="custom-options">
+                                            <!-- 选项将通过 JS 动态生成 -->
+                                            <div class="custom-option selected" data-value="">请选择或拉取模型</div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="model-select-value" value="">
+                                </div>
+                                <button id="fetch-models-btn" class="icon-btn" title="拉取模型列表">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="range-header">
+                                <label for="temperature">温度</label>
+                                <span id="temp-value">0.7</span>
+                            </div>
+                            <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                            <div class="range-labels">
+                                <span>0 (稳定)</span>
+                                <span>2 (创造性)</span>
+                            </div>
+                        </div>
+                        <button id="save-settings-btn" class="save-btn">保存配置</button>
+                    </div>
+                </div>
+
+                <!-- 美化设置页面 -->
+                <div class="settings-page sub-page" id="theme-settings-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="back-to-menu-btn-theme">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>美化设置</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="menu-content">
+                            <!-- 日间模式 -->
+                            <div class="menu-item" style="justify-content: space-between; cursor: default;">
+                                <div style="display: flex; align-items: center;">
+                                    <span>日间模式</span>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="day-mode-toggle">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            <!-- 导航气泡 -->
+                            <div class="menu-item" id="btn-wallpaper-settings">
+                                <span>壁纸</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </div>
+                            <div class="menu-item" id="btn-icon-settings">
+                                <span>图标</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </div>
+                            <div class="menu-item" id="btn-css-settings">
+                                <span>CSS</span>
+                                <i class="fas fa-chevron-right arrow"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 壁纸设置子页面 -->
+                <div class="settings-page sub-sub-page" id="wallpaper-settings-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="back-from-wallpaper">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>壁纸设置</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="wallpaper-section">
+                            <div class="section-title">主屏幕壁纸</div>
+                            <div class="wallpaper-card">
+                                <div class="wallpaper-preview">
+                                    <div class="preview-phone">
+                                        <div class="preview-screen" id="wallpaper-preview-screen"></div>
+                                    </div>
+                                </div>
+                                <div class="wallpaper-actions">
+                                    <button class="action-btn upload-btn" id="upload-wallpaper-btn">
+                                        <span>上传</span>
+                                        <input type="file" id="wallpaper-upload" accept="image/*" style="display: none;">
+                                    </button>
+                                    <button class="action-btn default-btn" id="reset-wallpaper-btn">
+                                        <span>恢复默认</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图标设置子页面 -->
+                <div class="settings-page sub-sub-page" id="icon-settings-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="back-from-icon">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>图标设置</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="form-group">
+                            <label>图标样式</label>
+                            <div class="style-options">
+                                <button class="style-btn active" data-type="icon-style" data-value="glass">毛玻璃</button>
+                                <button class="style-btn" data-type="icon-style" data-value="flat">扁平</button>
+                                <button class="style-btn" data-type="icon-style" data-value="outline">线框</button>
+                            </div>
+                        </div>
+                        
+                        <div class="custom-icons-section">
+                            <div class="section-header">
+                                <div class="section-title">自定义</div>
+                                <button class="refresh-btn" id="reset-custom-icons-btn" title="恢复默认">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            <div class="custom-icons-bubble">
+                                <div class="custom-icon-item" data-target="icon-diary">
+                                    <div class="icon-preview"><i class="fas fa-book-open"></i></div>
+                                    <span>日记</span>
+                                </div>
+                                <div class="custom-icon-item" data-target="icon-heart">
+                                    <div class="icon-preview"><i class="fas fa-heart-pulse"></i></div>
+                                    <span>心跳</span>
+                                </div>
+                                <div class="custom-icon-item" data-target="icon-file">
+                                    <div class="icon-preview"><i class="fas fa-folder-open"></i></div>
+                                    <span>文件</span>
+                                </div>
+                                <div class="custom-icon-item" data-target="icon-worldbook">
+                                    <div class="icon-preview"><i class="fas fa-book"></i></div>
+                                    <span>世界书</span>
+                                </div>
+                                <div class="custom-icon-item" data-target="icon-settings">
+                                    <div class="icon-preview"><i class="fas fa-cog"></i></div>
+                                    <span>设置</span>
+                                </div>
+                                <div class="custom-icon-item" data-target="icon-paw">
+                                    <div class="icon-preview"><i class="fas fa-paw"></i></div>
+                                    <span>桌宠</span>
+                                </div>
+                            </div>
+                            <input type="file" id="icon-upload" accept="image/*" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSS设置子页面 -->
+                <div class="settings-page sub-sub-page" id="css-settings-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="back-from-css">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>CSS 设置</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="form-group">
+                            <label>自定义 CSS</label>
+                            <textarea class="css-input" placeholder="在此输入 CSS 代码..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 桌宠设置页面 -->
+                <div class="settings-page sub-page" id="pet-settings-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="back-from-pet">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>桌宠</h2>
+                        <button class="close-btn" id="pet-options-btn">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                    <div class="settings-content pet-content">
+                        <!-- 上传区域 -->
+                        <div class="pet-upload-container" id="pet-upload-trigger">
+                            <div class="pet-preview" id="pet-preview">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <input type="file" id="pet-file-input" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <!-- 名字输入 (修改为横线样式) -->
+                        <div class="pet-name-container">
+                            <input type="text" id="pet-name-input" class="pet-name-input" placeholder="给它起个名字吧">
+                            <div class="pet-name-line"></div>
+                        </div>
+
+                        <!-- 语录输入 -->
+                        <div class="form-group" style="width: 100%; margin-top: 20px;">
+                            <label>桌宠语录 (每行一句)</label>
+                            <textarea id="pet-quotes-input" class="css-input" placeholder="输入语录，点击桌宠时随机弹出..." style="height: 150px;"></textarea>
+                        </div>
+                        
+                        <button id="save-pet-btn" class="save-btn">保存设置</button>
+                    </div>
+                </div>
+
+                <!-- 桌宠选项侧边栏 -->
+                <div class="settings-page sub-sub-page" id="pet-options-sidebar">
+                    <div class="settings-header">
+                        <button class="close-btn" id="close-pet-options">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>桌宠开关</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="menu-item" style="justify-content: space-between; cursor: default;">
+                            <span>开启桌宠</span>
+                            <label class="switch">
+                                <input type="checkbox" id="pet-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 桌宠元素 -->
+                <div id="desktop-pet" class="desktop-pet" style="display: none;">
+                    <img id="pet-image-display" src="" alt="Pet">
+                    <div class="pet-bubble" id="pet-bubble">你好呀！</div>
+                </div>
+
+                <!-- 提示消息容器 -->
+                <div id="toast-container" class="toast-container"></div>
+
+                <!-- 底部指示条 -->
+                <div class="home-indicator"></div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
