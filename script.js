@@ -16,14 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initCustomSelect();
     initPetFeature(); // 初始化桌宠功能
     initInputPersistence(); // 初始化输入框持久化
-
-    // 世界书按钮点击事件
-    const worldbookBtn = document.getElementById('icon-worldbook');
-    if (worldbookBtn) {
-        worldbookBtn.addEventListener('click', () => {
-            showToast('世界书功能开发中...');
-        });
-    }
+    initArchivePage(); // 初始化档案页面
+    initWorldbookPage(); // 初始化世界书页面
+    initChatPage(); // 初始化聊天页面
+    initUniversalModals(); // 初始化通用模态框
 
     // 流星雨按钮点击事件
     const meteorBtn = document.getElementById('meteor-btn');
@@ -219,11 +215,15 @@ function initSettingsPage() {
             const iconSettingsPage = document.getElementById('icon-settings-page');
             const cssSettingsPage = document.getElementById('css-settings-page');
             const petOptionsSidebar = document.getElementById('pet-options-sidebar');
+            const archivePage = document.getElementById('archive-page');
+            const worldbookPage = document.getElementById('worldbook-page');
             
             if (wallpaperSettingsPage) wallpaperSettingsPage.classList.remove('active');
             if (iconSettingsPage) iconSettingsPage.classList.remove('active');
             if (cssSettingsPage) cssSettingsPage.classList.remove('active');
             if (petOptionsSidebar) petOptionsSidebar.classList.remove('active');
+            if (archivePage) archivePage.classList.remove('active');
+            if (worldbookPage) worldbookPage.classList.remove('active');
         });
     }
 
@@ -328,48 +328,81 @@ function initSettingsPage() {
 }
 
 function initCustomSelect() {
-    const customSelect = document.querySelector('.custom-select');
-    const customOptions = document.querySelectorAll('.custom-option');
-    const selectedText = document.getElementById('selected-model-text');
-    const hiddenInput = document.getElementById('model-select-value');
+    const customSelects = document.querySelectorAll('.custom-select');
 
-    if (!customSelect) return;
+    customSelects.forEach(customSelect => {
+        const trigger = customSelect.querySelector('.custom-select-trigger');
+        const optionsContainer = customSelect.querySelector('.custom-options');
+        const customOptions = customSelect.querySelectorAll('.custom-option');
+        const wrapper = customSelect.closest('.custom-select-wrapper');
+        const hiddenInput = wrapper ? wrapper.querySelector('input[type="hidden"]') : null;
+        const selectedTextSpan = trigger.querySelector('span');
 
-    // 切换下拉菜单显示/隐藏
-    const trigger = customSelect.querySelector('.custom-select-trigger');
-    // 移除旧的事件监听器以防重复绑定
-    const newTrigger = trigger.cloneNode(true);
-    trigger.parentNode.replaceChild(newTrigger, trigger);
-    
-    newTrigger.addEventListener('click', (e) => {
-        customSelect.classList.toggle('open');
-        e.stopPropagation();
-    });
+        if (!trigger) return;
 
-    // 选项点击事件
-    customOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            customSelect.classList.remove('open');
+        // 移除旧的事件监听器
+        const newTrigger = trigger.cloneNode(true);
+        trigger.parentNode.replaceChild(newTrigger, trigger);
+        
+        newTrigger.addEventListener('click', (e) => {
+            // 关闭其他打开的下拉菜单
+            document.querySelectorAll('.custom-select.open').forEach(s => {
+                if (s !== customSelect) s.classList.remove('open');
+            });
+            customSelect.classList.toggle('open');
+            e.stopPropagation();
+        });
+
+        // 选项点击事件
+        // 注意：这里我们需要重新绑定选项事件，因为选项可能是动态生成的
+        // 使用事件委托绑定到 optionsContainer 上会更好，但为了保持一致性，我们还是遍历绑定
+        // 或者，如果 optionsContainer 存在，我们可以清空并重新绑定
+        
+        // 为了支持动态添加的选项，我们直接给每个选项绑定
+        const currentOptions = customSelect.querySelectorAll('.custom-option');
+        currentOptions.forEach(option => {
+            // 移除旧的监听器（通过克隆节点）
+            // 注意：这可能会导致性能问题如果频繁调用，但在这种规模下应该还好
+            // 更好的方式是只在初始化时绑定一次，或者使用事件委托
             
-            // 更新选中状态
-            customOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
+            // 这里简单处理：假设 initCustomSelect 会在选项更新后被调用
+            // 我们不克隆选项，直接添加监听器（可能会重复绑定，所以最好先移除）
+            // 由于没有简单的方法移除匿名函数，我们使用一个属性标记是否已绑定
             
-            // 更新显示文本和隐藏值
-            const value = this.dataset.value;
-            const text = this.textContent;
+            if (option.dataset.bound === 'true') return;
             
-            selectedText.textContent = text;
-            hiddenInput.value = value;
+            option.addEventListener('click', function(e) {
+                e.stopPropagation(); // 防止冒泡触发 document click
+                customSelect.classList.remove('open');
+                
+                // 更新选中状态
+                currentOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // 更新显示文本和隐藏值
+                const value = this.dataset.value;
+                const text = this.textContent;
+                
+                if (selectedTextSpan) selectedTextSpan.textContent = text;
+                if (hiddenInput) hiddenInput.value = value;
+            });
+            
+            option.dataset.bound = 'true';
         });
     });
 
-    // 点击外部关闭下拉菜单
-    document.addEventListener('click', (e) => {
-        if (!customSelect.contains(e.target)) {
-            customSelect.classList.remove('open');
-        }
-    });
+    // 点击外部关闭所有下拉菜单
+    // 只需要绑定一次
+    if (!document.body.dataset.selectBound) {
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.custom-select.open').forEach(select => {
+                if (!select.contains(e.target)) {
+                    select.classList.remove('open');
+                }
+            });
+        });
+        document.body.dataset.selectBound = 'true';
+    }
 }
 
 function showToast(message) {
@@ -409,6 +442,7 @@ function initDayMode() {
             const isDay = e.target.checked;
             localStorage.setItem('starDayMode', isDay);
             applyDayMode(isDay);
+            applyWallpaper(); // 重新应用壁纸
         });
     }
 }
@@ -445,7 +479,8 @@ function applyDayMode(isDay) {
             .custom-select-trigger { background: rgba(255, 255, 255, 0.8) !important; color: #1c1c1e !important; }
             .form-group input[type="text"], .form-group input[type="password"] { background: rgba(255, 255, 255, 0.8) !important; color: #1c1c1e !important; }
             .icon-btn { background: rgba(255, 255, 255, 0.8) !important; }
-            .save-btn { background: rgba(0, 122, 255, 0.1) !important; color: #007aff !important; border: 1px solid rgba(0, 122, 255, 0.2) !important; }
+            .save-btn { background: rgb(61, 61, 61) !important; color: #ffffff !important; border: 1px solid rgbargba(0, 0, 0, 0.1) !important; }
+            .header-action-btn { background: rgb(61, 61, 61) !important; color: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; }
             .toast { background: rgba(255, 255, 255, 0.9) !important; color: #1c1c1e !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; }
             .home-indicator { background: rgba(0, 0, 0, 0.5) !important; }
             .form-group label { color: rgba(60, 60, 67, 0.8) !important; }
@@ -462,6 +497,46 @@ function applyDayMode(isDay) {
             .custom-icon-item .icon-preview { background: rgba(255, 255, 255, 0.8) !important; color: #1c1c1e !important; }
             .custom-icon-item span { color: rgba(60, 60, 67, 0.6) !important; }
             .refresh-btn { color: #1c1c1e !important; }
+            .persona-bubble { background: rgba(255, 255, 255, 0.8) !important; }
+            .persona-avatar-container { background: rgba(255, 255, 255, 0.8) !important; border-color: rgba(0, 0, 0, 0.1) !important; }
+            .persona-name-input { color: #1c1c1e !important; }
+            .persona-name-line { background: rgba(0, 0, 0, 0.1) !important; }
+            .persona-bg-input { background: rgba(255, 255, 255, 0.5) !important; color: #1c1c1e !important; }
+            .toggle-bubble { background: rgba(255, 255, 255, 0.8) !important; border-color: rgba(0, 0, 0, 0.1) !important; }
+            .toggle-item { color: rgba(60, 60, 67, 0.6) !important; }
+            .toggle-item.active { color: #1c1c1e !important; background: rgba(0, 0, 0, 0.05) !important; }
+            .toggle-divider { background: rgba(0, 0, 0, 0.1) !important; }
+            .empty-state { color: rgba(60, 60, 67, 0.4) !important; }
+            .emoji-grid { background: rgba(255, 255, 255, 0.5) !important; }
+            .emoji-item { background: rgba(255, 255, 255, 0.8) !important; }
+            .emoji-name { color: rgba(60, 60, 67, 0.6) !important; }
+            .emoji-add-btn { background: rgba(255, 255, 255, 0.5) !important; border-color: rgba(0, 0, 0, 0.1) !important; }
+            .emoji-add-btn i { color: rgba(60, 60, 67, 0.4) !important; }
+            .select-indicator { border-color: rgba(0, 0, 0, 0.2) !important; background: rgba(255, 255, 255, 0.5) !important; color: #000 !important; }
+            .modal-content { background: rgba(242, 242, 247, 0.95) !important; border-color: rgba(0, 0, 0, 0.1) !important; }
+            .modal-header { border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important; }
+            .modal-header h3 { color: #1c1c1e !important; }
+            .close-modal-btn { color: rgba(60, 60, 67, 0.6) !important; }
+            .upload-option-btn { background: rgba(255, 255, 255, 0.8) !important; color: #1c1c1e !important; }
+            .upload-option-btn span { color: #1c1c1e !important; }
+            #emoji-url-input, #emoji-name-input { background: rgba(255, 255, 255, 0.8) !important; color: #1c1c1e !important; }
+            .folder-container { background: rgba(255, 255, 255, 0.8) !important; }
+            .folder-item { color: #1c1c1e !important; }
+            .folder-item:active { background: rgba(0, 0, 0, 0.05) !important; }
+            .folder-icon { color: rgba(60, 60, 67, 0.8) !important; }
+            .folder-arrow { color: rgba(60, 60, 67, 0.3) !important; }
+            .folder-items-list::before { background: rgba(0, 0, 0, 0.1) !important; }
+            .folder-actions-bar::before { background: rgba(0, 0, 0, 0.1) !important; }
+            .worldbook-item::after { background: rgba(0, 0, 0, 0.1) !important; }
+            .worldbook-item { color: #1c1c1e !important; }
+            .worldbook-item:active { background: rgba(0, 0, 0, 0.05) !important; }
+            .folder-action-btn { color: rgba(60, 60, 67, 0.6) !important; }
+            .folder-action-btn:hover { color: #1c1c1e !important; }
+            .item-delete-btn { color: rgba(60, 60, 67, 0.3) !important; }
+            .folder-empty-msg { color: rgba(60, 60, 67, 0.4) !important; }
+            .header-icon-btn { color: #1c1c1e !important; }
+            #confirm-url-btn, #confirm-name-btn, #confirm-folder-btn, #prompt-modal-ok-btn { background: #1c1c1e !important; color: #ffffff !important; }
+            .preview-label { color: rgba(60, 60, 67, 0.8) !important; }
         `;
         document.head.appendChild(style);
         
@@ -482,21 +557,13 @@ function applyDayMode(isDay) {
         if (style) style.remove();
     }
 
-    // 统一重新应用当前壁纸（根据当前模式和壁纸类型）
-    const wallpaperType = document.documentElement.dataset.wallpaperType;
-    const wallpaperValue = document.documentElement.dataset.wallpaperValue;
-    
-    if (wallpaperType === 'custom') {
-        applyWallpaper(wallpaperValue, true);
-    } else {
-        applyWallpaper('default');
-    }
+    // 重新应用当前壁纸
+    applyWallpaper();
+    applyChatWallpaper();
 }
 
 function initThemeSettings() {
     const styleBtns = document.querySelectorAll('.style-btn');
-    const uploadWallpaperBtn = document.getElementById('upload-wallpaper-btn');
-    const wallpaperUpload = document.getElementById('wallpaper-upload');
     const resetWallpaperBtn = document.getElementById('reset-wallpaper-btn');
     
     // 三级页面导航
@@ -554,33 +621,50 @@ function initThemeSettings() {
     // 加载保存的主题设置
     loadThemeSettings();
 
-    // 上传壁纸
-    if (uploadWallpaperBtn && wallpaperUpload) {
-        uploadWallpaperBtn.addEventListener('click', () => {
-            wallpaperUpload.click();
-        });
+    // 壁纸上传逻辑
+    const nightPreview = document.getElementById('night-wallpaper-preview');
+    const dayPreview = document.getElementById('day-wallpaper-preview');
+    const nightUpload = document.getElementById('wallpaper-upload-night');
+    const dayUpload = document.getElementById('wallpaper-upload-day');
 
-        wallpaperUpload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const result = e.target.result;
-                    applyWallpaper(result, true); // true 表示是自定义图片
-                    saveThemeSettings();
-                    showToast('壁纸已更新');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+    // 点击预览图触发上传
+    if (nightPreview && nightUpload) {
+        nightPreview.addEventListener('click', () => nightUpload.click());
+        nightUpload.addEventListener('change', (e) => handleWallpaperUpload(e, 'night'));
+    }
+
+    if (dayPreview && dayUpload) {
+        dayPreview.addEventListener('click', () => dayUpload.click());
+        dayUpload.addEventListener('change', (e) => handleWallpaperUpload(e, 'day'));
     }
 
     // 恢复默认壁纸
     if (resetWallpaperBtn) {
         resetWallpaperBtn.addEventListener('click', () => {
-            applyWallpaper('default');
-            saveThemeSettings();
-            showToast('已恢复默认壁纸');
+            resetWallpapers();
+        });
+    }
+
+    // 聊天背景上传逻辑
+    const chatNightPreview = document.getElementById('chat-night-wallpaper-preview');
+    const chatDayPreview = document.getElementById('chat-day-wallpaper-preview');
+    const chatNightUpload = document.getElementById('chat-wallpaper-upload-night');
+    const chatDayUpload = document.getElementById('chat-wallpaper-upload-day');
+    const resetChatWallpaperBtn = document.getElementById('reset-chat-wallpaper-btn');
+
+    if (chatNightPreview && chatNightUpload) {
+        chatNightPreview.addEventListener('click', () => chatNightUpload.click());
+        chatNightUpload.addEventListener('change', (e) => handleChatWallpaperUpload(e, 'night'));
+    }
+
+    if (chatDayPreview && chatDayUpload) {
+        chatDayPreview.addEventListener('click', () => chatDayUpload.click());
+        chatDayUpload.addEventListener('change', (e) => handleChatWallpaperUpload(e, 'day'));
+    }
+
+    if (resetChatWallpaperBtn) {
+        resetChatWallpaperBtn.addEventListener('click', () => {
+            resetChatWallpapers();
         });
     }
 
@@ -602,6 +686,166 @@ function initThemeSettings() {
 
     // 自定义图标上传
     initCustomIcons();
+}
+
+function handleWallpaperUpload(e, mode) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target.result;
+            saveWallpaperSetting(mode, 'custom', result);
+            updateWallpaperPreviews();
+            
+            // 如果当前模式匹配，立即应用
+            const isDayMode = localStorage.getItem('starDayMode') === 'true';
+            if ((mode === 'day' && isDayMode) || (mode === 'night' && !isDayMode)) {
+                applyWallpaper();
+            }
+            
+            showToast('壁纸已更新');
+        };
+        reader.readAsDataURL(file);
+    }
+    e.target.value = ''; // 重置 input
+}
+
+function handleChatWallpaperUpload(e, mode) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target.result;
+            saveChatWallpaperSetting(mode, 'custom', result);
+            updateChatWallpaperPreviews();
+            
+            // 如果当前模式匹配，立即应用
+            const isDayMode = localStorage.getItem('starDayMode') === 'true';
+            if ((mode === 'day' && isDayMode) || (mode === 'night' && !isDayMode)) {
+                applyChatWallpaper();
+            }
+            
+            showToast('聊天背景已更新');
+        };
+        reader.readAsDataURL(file);
+    }
+    e.target.value = ''; // 重置 input
+}
+
+function saveWallpaperSetting(mode, type, value) {
+    const settings = JSON.parse(localStorage.getItem('starThemeSettings') || '{}');
+    
+    // 确保结构完整
+    if (!settings.wallpapers) {
+        settings.wallpapers = {
+            night: { type: 'default', value: 'default' },
+            day: { type: 'default', value: 'default' }
+        };
+    }
+    
+    settings.wallpapers[mode] = { type, value };
+    localStorage.setItem('starThemeSettings', JSON.stringify(settings));
+}
+
+function saveChatWallpaperSetting(mode, type, value) {
+    const settings = JSON.parse(localStorage.getItem('starThemeSettings') || '{}');
+    
+    // 确保结构完整
+    if (!settings.chatWallpapers) {
+        settings.chatWallpapers = {
+            night: { type: 'default', value: 'default' },
+            day: { type: 'default', value: 'default' }
+        };
+    }
+    
+    settings.chatWallpapers[mode] = { type, value };
+    localStorage.setItem('starThemeSettings', JSON.stringify(settings));
+}
+
+function resetWallpapers() {
+    const settings = JSON.parse(localStorage.getItem('starThemeSettings') || '{}');
+    settings.wallpapers = {
+        night: { type: 'default', value: 'default' },
+        day: { type: 'default', value: 'default' }
+    };
+    localStorage.setItem('starThemeSettings', JSON.stringify(settings));
+    
+    updateWallpaperPreviews();
+    applyWallpaper();
+    showToast('已恢复默认壁纸');
+}
+
+function resetChatWallpapers() {
+    const settings = JSON.parse(localStorage.getItem('starThemeSettings') || '{}');
+    settings.chatWallpapers = {
+        night: { type: 'default', value: 'default' },
+        day: { type: 'default', value: 'default' }
+    };
+    localStorage.setItem('starThemeSettings', JSON.stringify(settings));
+    
+    updateChatWallpaperPreviews();
+    applyChatWallpaper();
+    showToast('已恢复默认聊天背景');
+}
+
+function updateWallpaperPreviews() {
+    const settings = JSON.parse(localStorage.getItem('starThemeSettings') || '{}');
+    // 确保有默认值
+    const wallpapers = settings.wallpapers || {
+        night: { type: 'default', value: 'default' },
+        day: { type: 'default', value: 'default' }
+    };
+
+    const nightScreen = document.getElementById('wallpaper-preview-screen-night');
+    const dayScreen = document.getElementById('wallpaper-preview-screen-day');
+
+    // 更新夜间预览
+    if (nightScreen) {
+        if (wallpapers.night && wallpapers.night.type === 'custom') {
+            nightScreen.style.background = `url('${wallpapers.night.value}') center/cover no-repeat`;
+        } else {
+            nightScreen.style.background = 'linear-gradient(180deg, #1c1c1e 0%, #000000 100%)';
+        }
+    }
+
+    // 更新日间预览
+    if (dayScreen) {
+        if (wallpapers.day && wallpapers.day.type === 'custom') {
+            dayScreen.style.background = `url('${wallpapers.day.value}') center/cover no-repeat`;
+        } else {
+            dayScreen.style.background = 'linear-gradient(180deg, #f2f2f7 0%, #ffffff 100%)';
+        }
+    }
+}
+
+function updateChatWallpaperPreviews() {
+    const settings = JSON.parse(localStorage.getItem('starThemeSettings') || '{}');
+    // 确保有默认值
+    const chatWallpapers = settings.chatWallpapers || {
+        night: { type: 'default', value: 'default' },
+        day: { type: 'default', value: 'default' }
+    };
+
+    const nightScreen = document.getElementById('chat-wallpaper-preview-screen-night');
+    const dayScreen = document.getElementById('chat-wallpaper-preview-screen-day');
+
+    // 更新夜间预览
+    if (nightScreen) {
+        if (chatWallpapers.night && chatWallpapers.night.type === 'custom') {
+            nightScreen.style.background = `url('${chatWallpapers.night.value}') center/cover no-repeat`;
+        } else {
+            nightScreen.style.background = 'rgba(28, 28, 30, 0.95)';
+        }
+    }
+
+    // 更新日间预览
+    if (dayScreen) {
+        if (chatWallpapers.day && chatWallpapers.day.type === 'custom') {
+            dayScreen.style.background = `url('${chatWallpapers.day.value}') center/cover no-repeat`;
+        } else {
+            dayScreen.style.background = 'rgba(242, 242, 247, 0.95)';
+        }
+    }
 }
 
 function initCustomIcons() {
@@ -748,32 +992,31 @@ function loadCustomIcons() {
     });
 }
 
-function applyWallpaper(value, isCustom = false) {
-    const previewScreen = document.getElementById('wallpaper-preview-screen');
+function applyWallpaper() {
+    const isDayMode = localStorage.getItem('starDayMode') === 'true';
+    const settings = JSON.parse(localStorage.getItem('starThemeSettings') || '{}');
+    // 确保有默认值
+    const wallpapers = settings.wallpapers || {
+        night: { type: 'default', value: 'default' },
+        day: { type: 'default', value: 'default' }
+    };
+    
+    const currentWallpaper = isDayMode ? wallpapers.day : wallpapers.night;
     const starsContainer = document.getElementById('stars-container');
     
-    if (isCustom) {
+    // 默认值处理
+    const type = currentWallpaper ? currentWallpaper.type : 'default';
+    const value = currentWallpaper ? currentWallpaper.value : 'default';
+
+    if (type === 'custom') {
         // 自定义图片壁纸
-        // 移除 fixed，因为在非全屏模式下 fixed 会相对于浏览器窗口计算大小，导致图片看起来被放大
         const bgStyle = `url('${value}') center/cover no-repeat`;
         document.documentElement.style.setProperty('--bg-gradient', bgStyle);
         
-        // 更新预览
-        if (previewScreen) {
-            previewScreen.style.background = `url('${value}') center/cover no-repeat`;
-        }
-        
         // 隐藏星星
         if (starsContainer) starsContainer.style.display = 'none';
-        
-        // 存储当前壁纸类型为自定义
-        document.documentElement.dataset.wallpaperType = 'custom';
-        document.documentElement.dataset.wallpaperValue = value;
     } else {
         // 默认渐变壁纸
-        // 检查当前是否为日间模式
-        const isDayMode = localStorage.getItem('starDayMode') === 'true';
-        
         let gradient;
         if (isDayMode) {
             gradient = 'linear-gradient(180deg, #f2f2f7 0%, #ffffff 100%)';
@@ -783,17 +1026,40 @@ function applyWallpaper(value, isCustom = false) {
         
         document.documentElement.style.setProperty('--bg-gradient', gradient);
         
-        // 更新预览
-        if (previewScreen) {
-            previewScreen.style.background = gradient;
-        }
-        
         // 显示星星
         if (starsContainer) starsContainer.style.display = 'block';
-        
-        // 存储当前壁纸类型为默认
-        document.documentElement.dataset.wallpaperType = 'default';
-        document.documentElement.dataset.wallpaperValue = 'default';
+    }
+}
+
+function applyChatWallpaper() {
+    const isDayMode = localStorage.getItem('starDayMode') === 'true';
+    const settings = JSON.parse(localStorage.getItem('starThemeSettings') || '{}');
+    // 确保有默认值
+    const chatWallpapers = settings.chatWallpapers || {
+        night: { type: 'default', value: 'default' },
+        day: { type: 'default', value: 'default' }
+    };
+    
+    const currentWallpaper = isDayMode ? chatWallpapers.day : chatWallpapers.night;
+    const chatPage = document.getElementById('chat-page');
+    
+    if (!chatPage) return;
+
+    // 默认值处理
+    const type = currentWallpaper ? currentWallpaper.type : 'default';
+    const value = currentWallpaper ? currentWallpaper.value : 'default';
+
+    if (type === 'custom') {
+        // 自定义图片壁纸
+        // 使用 !important 覆盖可能存在的日间模式样式
+        chatPage.style.setProperty('background', `url('${value}') center/cover no-repeat`, 'important');
+    } else {
+        // 默认背景
+        if (isDayMode) {
+            chatPage.style.setProperty('background', 'rgba(242, 242, 247, 0.95)', 'important');
+        } else {
+            chatPage.style.setProperty('background', 'rgba(28, 28, 30, 0.95)', 'important');
+        }
     }
 }
 
@@ -862,6 +1128,10 @@ function loadThemeSettings() {
 
     // 加载自定义图标
     loadCustomIcons();
+    
+    // 加载聊天壁纸
+    updateChatWallpaperPreviews();
+    applyChatWallpaper();
 }
 
 function updateThemeUI(style) {
@@ -1070,9 +1340,9 @@ function updatePetVisibility(isEnabled) {
             desktopPet.style.display = 'block';
             // 如果没有位置信息，设置默认位置
             if (!desktopPet.style.left) {
-                desktopPet.style.left = '50%';
-                desktopPet.style.top = '50%';
-                desktopPet.style.transform = 'translate(-50%, -50%)';
+                desktopPet.style.left = 'calc(100% - 100px)';
+                desktopPet.style.top = 'calc(100% - 200px)';
+                desktopPet.style.transform = 'none';
             }
         } else {
             desktopPet.style.display = 'none';
@@ -1205,4 +1475,1297 @@ function initInputPersistence() {
     starInput.addEventListener('input', (e) => {
         localStorage.setItem('starInputContent', e.target.value);
     });
+}
+
+function initWorldbookPage() {
+    const worldbookBtn = document.getElementById('icon-worldbook');
+    const worldbookPage = document.getElementById('worldbook-page');
+    const closeWorldbookBtn = document.getElementById('close-worldbook-btn');
+    
+    const addFolderBtn = document.getElementById('add-folder-btn');
+    const newFolderModal = document.getElementById('new-folder-modal');
+    const closeFolderModal = document.getElementById('close-folder-modal');
+    const confirmFolderBtn = document.getElementById('confirm-folder-btn');
+    const folderNameInput = document.getElementById('folder-name-input');
+    const folderList = document.getElementById('folder-list');
+    const emptyState = document.getElementById('worldbook-empty-state');
+
+    // 新增世界书页面元素
+    const addWorldbookBtn = document.getElementById('add-worldbook-btn');
+    const addWorldbookPage = document.getElementById('add-worldbook-page');
+    const closeAddWorldbookBtn = document.getElementById('close-add-worldbook-btn');
+    const saveWorldbookItemBtn = document.getElementById('save-worldbook-item-btn');
+    const worldbookTitleInput = document.getElementById('worldbook-title-input');
+    const worldbookContentInput = document.getElementById('worldbook-content-input');
+    const folderSelectOptions = document.getElementById('folder-options');
+    const selectedFolderValue = document.getElementById('selected-folder-value');
+    const selectedFolderText = document.querySelector('#folder-select .custom-select-trigger span');
+    
+    let currentEditingItemId = null;
+
+    // 加载文件夹
+    loadFolders();
+
+    if (worldbookBtn && worldbookPage) {
+        worldbookBtn.addEventListener('click', () => {
+            worldbookPage.classList.add('active');
+        });
+    }
+
+    // 打开新增世界书页面
+    if (addWorldbookBtn && addWorldbookPage) {
+        addWorldbookBtn.addEventListener('click', () => {
+            currentEditingItemId = null;
+            // 修改标题
+            const pageTitle = addWorldbookPage.querySelector('.settings-header h2');
+            if (pageTitle) pageTitle.textContent = '新增世界书';
+
+            // 加载文件夹选项
+            loadFolderOptions();
+            // 重置表单
+            if (worldbookTitleInput) worldbookTitleInput.value = '';
+            if (worldbookContentInput) worldbookContentInput.value = '';
+            if (selectedFolderValue) selectedFolderValue.value = '';
+            if (selectedFolderText) selectedFolderText.textContent = '无';
+            // 移除所有选项的 selected 类
+            if (folderSelectOptions) {
+                folderSelectOptions.querySelectorAll('.custom-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                    if (opt.dataset.value === '') opt.classList.add('selected');
+                });
+            }
+            
+            addWorldbookPage.classList.add('active');
+        });
+    }
+
+    // 关闭新增世界书页面
+    if (closeAddWorldbookBtn && addWorldbookPage) {
+        closeAddWorldbookBtn.addEventListener('click', () => {
+            addWorldbookPage.classList.remove('active');
+        });
+    }
+
+    // 保存世界书条目
+    if (saveWorldbookItemBtn) {
+        saveWorldbookItemBtn.addEventListener('click', () => {
+            const title = worldbookTitleInput.value.trim();
+            const content = worldbookContentInput.value.trim();
+            let folderId = selectedFolderValue.value;
+
+            if (title) {
+                // 如果未选择文件夹，自动归入“未分类”
+                if (!folderId) {
+                    folderId = getOrCreateUncategorizedFolder();
+                }
+
+                if (currentEditingItemId) {
+                    updateWorldbookItem(currentEditingItemId, title, content, folderId);
+                    showToast('世界书条目已更新');
+                } else {
+                    saveWorldbookItem(title, content, folderId);
+                    showToast('世界书条目已保存');
+                }
+                addWorldbookPage.classList.remove('active');
+                
+                // 刷新所有展开的文件夹
+                document.querySelectorAll('.folder-dropdown').forEach(dropdown => {
+                    if (dropdown.style.display !== 'none') {
+                        const fId = dropdown.parentElement.dataset.id;
+                        const itemsList = dropdown.querySelector('.folder-items-list');
+                        renderFolderItems(fId, itemsList);
+                    }
+                });
+            } else {
+                showToast('请输入类目名称');
+            }
+        });
+    }
+
+    function getOrCreateUncategorizedFolder() {
+        let folders = JSON.parse(localStorage.getItem('starWorldbookFolders') || '[]');
+        let uncategorized = folders.find(f => f.name === '未分类');
+        
+        if (!uncategorized) {
+            uncategorized = {
+                id: Date.now().toString(),
+                name: '未分类',
+                createdAt: new Date().toISOString()
+            };
+            folders.push(uncategorized);
+            localStorage.setItem('starWorldbookFolders', JSON.stringify(folders));
+            
+            // 刷新文件夹列表
+            loadFolders(); 
+        }
+        
+        return uncategorized.id;
+    }
+
+    function updateWorldbookItem(id, title, content, folderId) {
+        let items = JSON.parse(localStorage.getItem('starWorldbookItems') || '[]');
+        const index = items.findIndex(i => i.id === id);
+        if (index !== -1) {
+            items[index].title = title;
+            items[index].content = content;
+            items[index].folderId = folderId || null;
+            items[index].updatedAt = new Date().toISOString();
+            localStorage.setItem('starWorldbookItems', JSON.stringify(items));
+        }
+    }
+
+    function editWorldbookItem(item) {
+        currentEditingItemId = item.id;
+        
+        // 修改标题
+        const pageTitle = addWorldbookPage.querySelector('.settings-header h2');
+        if (pageTitle) pageTitle.textContent = '编辑世界书';
+
+        // 填充表单
+        if (worldbookTitleInput) worldbookTitleInput.value = item.title;
+        if (worldbookContentInput) worldbookContentInput.value = item.content || '';
+        
+        // 加载文件夹选项并选中
+        loadFolderOptions();
+        
+        const folderId = item.folderId || '';
+        if (selectedFolderValue) selectedFolderValue.value = folderId;
+        
+        // 更新显示文本和选中状态
+        if (folderSelectOptions) {
+            const options = folderSelectOptions.querySelectorAll('.custom-option');
+            let found = false;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === folderId) {
+                    opt.classList.add('selected');
+                    if (selectedFolderText) selectedFolderText.textContent = opt.textContent;
+                    found = true;
+                }
+            });
+            if (!found && selectedFolderText) selectedFolderText.textContent = '无';
+        }
+        
+        addWorldbookPage.classList.add('active');
+    }
+
+    function loadFolderOptions() {
+        if (!folderSelectOptions) return;
+        
+        // 保留“无”选项
+        folderSelectOptions.innerHTML = '<div class="custom-option selected" data-value="">无</div>';
+        
+        const folders = JSON.parse(localStorage.getItem('starWorldbookFolders') || '[]');
+        
+        folders.forEach(folder => {
+            const option = document.createElement('div');
+            option.classList.add('custom-option');
+            option.dataset.value = folder.id;
+            option.textContent = folder.name;
+            folderSelectOptions.appendChild(option);
+        });
+
+        // 重新绑定下拉菜单事件
+        initCustomSelect();
+    }
+
+    function saveWorldbookItem(title, content, folderId) {
+        const item = {
+            id: Date.now().toString(),
+            title: title,
+            content: content,
+            folderId: folderId || null,
+            createdAt: new Date().toISOString()
+        };
+
+        const items = JSON.parse(localStorage.getItem('starWorldbookItems') || '[]');
+        items.push(item);
+        localStorage.setItem('starWorldbookItems', JSON.stringify(items));
+    }
+
+    if (closeWorldbookBtn && worldbookPage) {
+        closeWorldbookBtn.addEventListener('click', () => {
+            worldbookPage.classList.remove('active');
+        });
+    }
+
+    // 新建文件夹逻辑
+    if (addFolderBtn && newFolderModal) {
+        addFolderBtn.addEventListener('click', () => {
+            newFolderModal.classList.add('active');
+            if (folderNameInput) folderNameInput.focus();
+        });
+    }
+
+    if (closeFolderModal && newFolderModal) {
+        closeFolderModal.addEventListener('click', () => {
+            newFolderModal.classList.remove('active');
+        });
+    }
+
+    if (newFolderModal) {
+        newFolderModal.addEventListener('click', (e) => {
+            if (e.target === newFolderModal) {
+                newFolderModal.classList.remove('active');
+            }
+        });
+    }
+
+    if (confirmFolderBtn && folderNameInput) {
+        confirmFolderBtn.addEventListener('click', () => {
+            const folderName = folderNameInput.value.trim();
+            if (folderName) {
+                addFolder(folderName);
+                newFolderModal.classList.remove('active');
+                folderNameInput.value = '';
+                showToast('文件夹创建成功');
+            } else {
+                showToast('请输入文件夹名称');
+            }
+        });
+    }
+
+    function addFolder(name) {
+        const folder = {
+            id: Date.now().toString(),
+            name: name,
+            createdAt: new Date().toISOString()
+        };
+
+        // 保存到本地存储
+        const folders = JSON.parse(localStorage.getItem('starWorldbookFolders') || '[]');
+        folders.push(folder);
+        localStorage.setItem('starWorldbookFolders', JSON.stringify(folders));
+
+        // 渲染到界面
+        renderFolder(folder);
+        updateEmptyState();
+    }
+
+    function renderFolder(folder) {
+        if (!folderList) return;
+
+        // 容器
+        const folderContainer = document.createElement('div');
+        folderContainer.classList.add('folder-container');
+        folderContainer.dataset.id = folder.id;
+
+        // 头部（原来的 folder-item）
+        const folderHeader = document.createElement('div');
+        folderHeader.classList.add('folder-item');
+        
+        folderHeader.innerHTML = `
+            <div class="folder-icon">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="folder-name">${folder.name}</div>
+            <div class="folder-arrow">
+                <i class="fas fa-chevron-right"></i>
+            </div>
+        `;
+
+        // 下拉内容容器
+        const dropdown = document.createElement('div');
+        dropdown.classList.add('folder-dropdown');
+        dropdown.style.display = 'none'; // 默认隐藏
+
+        // 子项列表容器
+        const itemsList = document.createElement('div');
+        itemsList.classList.add('folder-items-list');
+        
+        // 操作栏
+        const actionsBar = document.createElement('div');
+        actionsBar.classList.add('folder-actions-bar');
+        actionsBar.innerHTML = `
+            <div class="folder-action-btn edit-btn">编辑文件夹</div>
+            <div class="folder-action-btn delete-btn">删除文件夹</div>
+        `;
+
+        // 绑定操作栏事件
+        const editBtn = actionsBar.querySelector('.edit-btn');
+        const deleteBtn = actionsBar.querySelector('.delete-btn');
+
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showPromptModal('重命名文件夹', folder.name, (newName) => {
+                if (newName && newName.trim() !== '') {
+                    updateFolderName(folder.id, newName.trim());
+                }
+            });
+        });
+
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showConfirmModal(`确定要删除文件夹 "${folder.name}" 及其所有内容吗？`, () => {
+                deleteFolder(folder.id, folderContainer);
+            });
+        });
+
+        dropdown.appendChild(actionsBar);
+        dropdown.appendChild(itemsList);
+
+        // 点击展开/折叠
+        folderHeader.addEventListener('click', () => {
+            const isExpanded = dropdown.style.display !== 'none';
+            const arrow = folderHeader.querySelector('.folder-arrow i');
+            
+            if (isExpanded) {
+                dropdown.style.display = 'none';
+                arrow.classList.remove('fa-chevron-down');
+                arrow.classList.add('fa-chevron-right');
+            } else {
+                // 加载并渲染子项
+                renderFolderItems(folder.id, itemsList);
+                dropdown.style.display = 'flex';
+                arrow.classList.remove('fa-chevron-right');
+                arrow.classList.add('fa-chevron-down');
+            }
+        });
+
+        // 移除长按和右键删除，因为有了专门的删除按钮
+
+        folderContainer.appendChild(folderHeader);
+        folderContainer.appendChild(dropdown);
+        folderList.appendChild(folderContainer);
+    }
+
+    function updateFolderName(id, newName) {
+        let folders = JSON.parse(localStorage.getItem('starWorldbookFolders') || '[]');
+        const folderIndex = folders.findIndex(f => f.id === id);
+        
+        if (folderIndex !== -1) {
+            folders[folderIndex].name = newName;
+            localStorage.setItem('starWorldbookFolders', JSON.stringify(folders));
+            loadFolders(); // 重新加载列表
+            showToast('文件夹名称已更新');
+        }
+    }
+
+    function renderFolderItems(folderId, container) {
+        container.innerHTML = ''; // 清空
+        const allItems = JSON.parse(localStorage.getItem('starWorldbookItems') || '[]');
+        const folderItems = allItems.filter(item => item.folderId === folderId);
+
+        if (folderItems.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.classList.add('folder-empty-msg');
+            emptyMsg.textContent = '暂无内容';
+            container.appendChild(emptyMsg);
+            return;
+        }
+
+        folderItems.forEach(item => {
+            const itemEl = document.createElement('div');
+            itemEl.classList.add('worldbook-item');
+            itemEl.innerHTML = `
+                <div class="item-title">${item.title}</div>
+                <div class="item-delete-btn" title="删除">
+                    <i class="fas fa-trash"></i>
+                </div>
+            `;
+            
+            // 绑定点击编辑事件
+            itemEl.addEventListener('click', () => {
+                editWorldbookItem(item);
+            });
+            
+            // 绑定删除事件
+            const deleteBtn = itemEl.querySelector('.item-delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 防止触发条目点击
+                showConfirmModal(`确定要删除 "${item.title}" 吗？`, () => {
+                    deleteWorldbookItem(item.id, itemEl, folderId, container);
+                });
+            });
+
+            container.appendChild(itemEl);
+        });
+    }
+
+    function deleteWorldbookItem(itemId, element, folderId, container) {
+        let items = JSON.parse(localStorage.getItem('starWorldbookItems') || '[]');
+        items = items.filter(i => i.id !== itemId);
+        localStorage.setItem('starWorldbookItems', JSON.stringify(items));
+        
+        element.remove();
+        
+        // 检查是否还有剩余项，如果没有，显示空消息
+        if (container.children.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.classList.add('folder-empty-msg');
+            emptyMsg.textContent = '暂无内容';
+            container.appendChild(emptyMsg);
+        }
+        
+        showToast('已删除');
+    }
+
+    function deleteFolder(id, element) {
+        // 从本地存储删除
+        let folders = JSON.parse(localStorage.getItem('starWorldbookFolders') || '[]');
+        folders = folders.filter(f => f.id !== id);
+        localStorage.setItem('starWorldbookFolders', JSON.stringify(folders));
+
+        // 从界面移除
+        element.remove();
+        updateEmptyState();
+        showToast('文件夹已删除');
+    }
+
+    function loadFolders() {
+        if (!folderList) return;
+        
+        folderList.innerHTML = ''; // 清空列表
+        const folders = JSON.parse(localStorage.getItem('starWorldbookFolders') || '[]');
+        
+        folders.forEach(folder => {
+            renderFolder(folder);
+        });
+
+        updateEmptyState();
+    }
+
+    function updateEmptyState() {
+        if (!emptyState || !folderList) return;
+        
+        const hasFolders = folderList.children.length > 0;
+        if (hasFolders) {
+            emptyState.style.display = 'none';
+        } else {
+            emptyState.style.display = 'flex';
+        }
+    }
+}
+
+function initArchivePage() {
+    const archiveBtn = document.getElementById('icon-file');
+    const archivePage = document.getElementById('archive-page');
+    const closeArchiveBtn = document.getElementById('close-archive-btn');
+    const saveArchiveBtn = document.getElementById('save-archive-btn');
+    const manageEmojiBtn = document.getElementById('manage-emoji-btn');
+    const cancelManageBtn = document.getElementById('cancel-manage-btn');
+
+    // AI Persona Elements
+    const aiAvatarTrigger = document.getElementById('ai-avatar-trigger');
+    const aiAvatarUpload = document.getElementById('ai-avatar-upload');
+    const aiAvatarImg = document.getElementById('ai-avatar-img');
+    const aiNameInput = document.getElementById('ai-name-input');
+    const aiBgInput = document.getElementById('ai-bg-input');
+
+    // User Persona Elements
+    const userAvatarTrigger = document.getElementById('user-persona-avatar-trigger');
+    const userAvatarUpload = document.getElementById('user-persona-avatar-upload');
+    const userAvatarImg = document.getElementById('user-persona-avatar-img');
+    const userNameInput = document.getElementById('user-name-input');
+    const userBgInput = document.getElementById('user-bg-input');
+
+    // 加载保存的档案数据
+    loadArchiveData();
+
+    // 打开档案页面
+    if (archiveBtn && archivePage) {
+        archiveBtn.addEventListener('click', () => {
+            archivePage.classList.add('active');
+        });
+    }
+
+    // 关闭档案页面
+    if (closeArchiveBtn && archivePage) {
+        closeArchiveBtn.addEventListener('click', () => {
+            archivePage.classList.remove('active');
+        });
+    }
+
+    // 保存档案数据
+    if (saveArchiveBtn) {
+        saveArchiveBtn.addEventListener('click', () => {
+            const archiveData = {
+                ai: {
+                    name: aiNameInput.value,
+                    background: aiBgInput.value,
+                    avatar: aiAvatarImg.src
+                },
+                user: {
+                    name: userNameInput.value,
+                    background: userBgInput.value,
+                    avatar: userAvatarImg.src
+                }
+            };
+
+            try {
+                localStorage.setItem('starArchiveData', JSON.stringify(archiveData));
+                showToast('档案已保存');
+            } catch (e) {
+                console.error('保存失败', e);
+                showToast('保存失败，图片可能过大');
+            }
+        });
+    }
+
+    // AI 头像上传
+    if (aiAvatarTrigger && aiAvatarUpload) {
+        aiAvatarTrigger.addEventListener('click', () => {
+            aiAvatarUpload.click();
+        });
+
+        aiAvatarUpload.addEventListener('change', (e) => {
+            handleAvatarUpload(e, aiAvatarImg);
+        });
+    }
+
+    // 用户头像上传
+    if (userAvatarTrigger && userAvatarUpload) {
+        userAvatarTrigger.addEventListener('click', () => {
+            userAvatarUpload.click();
+        });
+
+        userAvatarUpload.addEventListener('change', (e) => {
+            handleAvatarUpload(e, userAvatarImg);
+        });
+    }
+
+    // 底部切换逻辑
+    const tabPersona = document.getElementById('tab-persona');
+    const tabEmoji = document.getElementById('tab-emoji');
+    const contentPersona = document.getElementById('archive-persona-content');
+    const contentEmoji = document.getElementById('archive-emoji-content');
+    const archiveTitle = archivePage.querySelector('.settings-header h2');
+
+    // 初始化标题
+    if (archiveTitle) {
+        if (tabPersona && tabPersona.classList.contains('active')) {
+            archiveTitle.textContent = '人设';
+        } else if (tabEmoji && tabEmoji.classList.contains('active')) {
+            archiveTitle.textContent = '表情包';
+        }
+    }
+
+    if (tabPersona && tabEmoji && contentPersona && contentEmoji) {
+        tabPersona.addEventListener('click', () => {
+            // 切换 Tab 样式
+            tabPersona.classList.add('active');
+            tabEmoji.classList.remove('active');
+            
+            // 切换内容显示
+            contentPersona.style.display = 'block';
+            contentEmoji.style.display = 'none';
+            
+            // 更新标题
+            if (archiveTitle) archiveTitle.textContent = '人设';
+
+            // 按钮切换
+            if (saveArchiveBtn) saveArchiveBtn.style.display = 'flex';
+            if (manageEmojiBtn) manageEmojiBtn.style.display = 'none';
+            
+            // 退出管理模式
+            exitManageMode();
+        });
+
+        tabEmoji.addEventListener('click', () => {
+            // 切换 Tab 样式
+            tabEmoji.classList.add('active');
+            tabPersona.classList.remove('active');
+            
+            // 切换内容显示
+            contentEmoji.style.display = 'block';
+            contentPersona.style.display = 'none';
+            
+            // 更新标题
+            if (archiveTitle) archiveTitle.textContent = '表情包';
+
+            // 按钮切换
+            if (saveArchiveBtn) saveArchiveBtn.style.display = 'none';
+            if (manageEmojiBtn) manageEmojiBtn.style.display = 'flex';
+        });
+    }
+
+    // 管理按钮点击事件
+    if (manageEmojiBtn) {
+        manageEmojiBtn.addEventListener('click', () => {
+            const isManaging = document.querySelector('.emoji-grid.managing');
+            if (isManaging) {
+                // 如果已经在管理模式，且按钮可点击（说明有选中项），则执行删除
+                const selectedCount = document.querySelectorAll('.emoji-item.selected').length;
+                if (selectedCount > 0) {
+                    deleteSelectedEmojis();
+                }
+            } else {
+                // 进入管理模式
+                enterManageMode();
+            }
+        });
+    }
+
+    // 取消按钮点击事件
+    if (cancelManageBtn) {
+        cancelManageBtn.addEventListener('click', () => {
+            exitManageMode();
+        });
+    }
+
+    // 初始化表情包功能
+    initEmojiFeature();
+}
+
+function initEmojiFeature() {
+    const addAiEmojiBtn = document.getElementById('add-ai-emoji-btn');
+    const addUserEmojiBtn = document.getElementById('add-user-emoji-btn');
+    const emojiModal = document.getElementById('emoji-upload-modal');
+    const closeEmojiModal = document.getElementById('close-emoji-modal');
+    const uploadLocalBtn = document.getElementById('upload-local-btn');
+    const uploadUrlBtn = document.getElementById('upload-url-btn');
+    const emojiFileInput = document.getElementById('emoji-file-input');
+    const urlInputContainer = document.getElementById('url-input-container');
+    const emojiUrlInput = document.getElementById('emoji-url-input');
+    const confirmUrlBtn = document.getElementById('confirm-url-btn');
+    
+    let currentEmojiTarget = null; // 'ai' or 'user'
+
+    // 加载保存的表情包
+    loadEmojis();
+
+    // 打开模态框
+    if (addAiEmojiBtn) {
+        addAiEmojiBtn.addEventListener('click', () => {
+            currentEmojiTarget = 'ai';
+            openModal();
+        });
+    }
+
+    if (addUserEmojiBtn) {
+        addUserEmojiBtn.addEventListener('click', () => {
+            currentEmojiTarget = 'user';
+            openModal();
+        });
+    }
+
+    // 关闭模态框
+    if (closeEmojiModal) {
+        closeEmojiModal.addEventListener('click', closeModal);
+    }
+
+    // 点击遮罩层关闭
+    if (emojiModal) {
+        emojiModal.addEventListener('click', (e) => {
+            if (e.target === emojiModal) closeModal();
+        });
+    }
+
+    function openModal() {
+        emojiModal.classList.add('active');
+        urlInputContainer.style.display = 'none';
+        emojiUrlInput.value = '';
+    }
+
+    function closeModal() {
+        emojiModal.classList.remove('active');
+    }
+
+    // 本地上传
+    if (uploadLocalBtn && emojiFileInput) {
+        uploadLocalBtn.addEventListener('click', () => {
+            emojiFileInput.click();
+        });
+
+        emojiFileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                let processedCount = 0;
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        addEmoji(currentEmojiTarget, e.target.result);
+                        processedCount++;
+                        if (processedCount === files.length) {
+                            closeModal();
+                            // 重置 input
+                            emojiFileInput.value = '';
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        });
+    }
+
+    // URL 上传
+    if (uploadUrlBtn && urlInputContainer) {
+        uploadUrlBtn.addEventListener('click', () => {
+            urlInputContainer.style.display = 'flex';
+            emojiUrlInput.focus();
+        });
+    }
+
+    if (confirmUrlBtn && emojiUrlInput) {
+        confirmUrlBtn.addEventListener('click', () => {
+            const input = emojiUrlInput.value.trim();
+            if (input) {
+                const lines = input.split('\n');
+                let addedCount = 0;
+                
+                lines.forEach(line => {
+                    line = line.trim();
+                    if (line) {
+                        // 尝试解析 "名字:URL" 格式
+                        // 找到第一个冒号的位置
+                        const firstColonIndex = line.indexOf(':');
+                        
+                        let name = '表情包';
+                        let url = line;
+                        
+                        // 如果存在冒号，且不是在开头（即有名字），且后面还有内容（即有URL部分）
+                        // 注意：URL本身包含冒号（如https://），所以我们需要判断这个冒号是否是分隔符
+                        // 简单的判断：如果冒号后面紧跟 //，那可能整行就是个URL
+                        // 更稳妥的方式：如果第一个冒号后面是 //，那整行视为URL。否则视为 名字:URL
+                        
+                        if (firstColonIndex > 0) {
+                            // 检查冒号后面是否紧跟 //
+                            const isUrlProtocol = line.substring(firstColonIndex, firstColonIndex + 3) === '://';
+                            
+                            if (!isUrlProtocol) {
+                                name = line.substring(0, firstColonIndex).trim();
+                                url = line.substring(firstColonIndex + 1).trim();
+                            }
+                        }
+                        
+                        if (url) {
+                            addEmoji(currentEmojiTarget, url, name);
+                            addedCount++;
+                        }
+                    }
+                });
+
+                if (addedCount > 0) {
+                    closeModal();
+                    emojiUrlInput.value = ''; // 清空输入框
+                    showToast(`成功添加 ${addedCount} 个表情包`);
+                } else {
+                    showToast('未检测到有效的输入');
+                }
+            } else {
+                showToast('请输入内容');
+            }
+        });
+    }
+}
+
+function addEmoji(type, src, name = '表情包') {
+    const gridId = type === 'ai' ? 'ai-emoji-grid' : 'user-emoji-grid';
+    const grid = document.getElementById(gridId);
+    const addBtn = type === 'ai' ? document.getElementById('add-ai-emoji-btn') : document.getElementById('add-user-emoji-btn');
+    
+    if (!grid || !addBtn) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('emoji-wrapper');
+
+    const emojiItem = document.createElement('div');
+    emojiItem.classList.add('emoji-item');
+    
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = name;
+    
+    // 添加选择指示器
+    const selectIndicator = document.createElement('div');
+    selectIndicator.classList.add('select-indicator');
+    selectIndicator.innerHTML = '<i class="fas fa-check"></i>';
+
+    const deleteBtn = document.createElement('div');
+    deleteBtn.classList.add('delete-emoji-btn');
+    deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        wrapper.remove();
+        saveEmojis();
+    });
+
+    emojiItem.appendChild(img);
+    emojiItem.appendChild(selectIndicator);
+    emojiItem.appendChild(deleteBtn);
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.classList.add('emoji-name');
+    nameSpan.textContent = name;
+
+    // 点击事件处理
+    emojiItem.addEventListener('click', () => {
+        const grid = emojiItem.closest('.emoji-grid');
+        if (grid.classList.contains('managing')) {
+            // 管理模式：切换选中状态
+            emojiItem.classList.toggle('selected');
+            updateManageButtonState();
+        } else {
+            // 普通模式：修改名字
+            const nameModal = document.getElementById('name-edit-modal');
+            const nameInput = document.getElementById('emoji-name-input');
+            const confirmBtn = document.getElementById('confirm-name-btn');
+            const closeBtn = document.getElementById('close-name-modal');
+
+            if (nameModal && nameInput && confirmBtn) {
+                nameInput.value = nameSpan.textContent;
+                nameModal.classList.add('active');
+                nameInput.focus();
+
+                const handleConfirm = () => {
+                    const newName = nameInput.value.trim();
+                    if (newName !== '') {
+                        nameSpan.textContent = newName;
+                        img.alt = newName;
+                        saveEmojis();
+                        nameModal.classList.remove('active');
+                    }
+                    cleanup();
+                };
+
+                const handleClose = () => {
+                    nameModal.classList.remove('active');
+                    cleanup();
+                };
+
+                const handleOutsideClick = (e) => {
+                    if (e.target === nameModal) {
+                        handleClose();
+                    }
+                };
+
+                const cleanup = () => {
+                    confirmBtn.removeEventListener('click', handleConfirm);
+                    closeBtn.removeEventListener('click', handleClose);
+                    nameModal.removeEventListener('click', handleOutsideClick);
+                };
+
+                confirmBtn.addEventListener('click', handleConfirm);
+                closeBtn.addEventListener('click', handleClose);
+                nameModal.addEventListener('click', handleOutsideClick);
+            }
+        }
+    });
+
+    wrapper.appendChild(emojiItem);
+    wrapper.appendChild(nameSpan);
+    
+    // 插入到添加按钮之前
+    // 注意：添加按钮现在也应该被包裹在 wrapper 中或者直接作为 grid 的子元素
+    // 这里假设添加按钮是 grid 的直接子元素，且始终在最后
+    // 为了保持添加按钮在第一个，我们需要调整插入逻辑
+    
+    // 实际上，用户要求“+”号始终位于第一个
+    // 所以新元素应该插入到添加按钮之后
+    
+    // 检查是否已经有添加按钮，如果有，确保它在第一个位置
+    if (grid.firstElementChild !== addBtn) {
+        grid.insertBefore(addBtn, grid.firstElementChild);
+    }
+    
+    // 将新表情包添加到 grid 中（在添加按钮之后）
+    // 如果 grid 只有添加按钮，直接 append
+    // 如果有其他表情包，append 到最后
+    grid.appendChild(wrapper);
+    
+    saveEmojis();
+}
+
+function saveEmojis() {
+    const aiEmojis = [];
+    const userEmojis = [];
+
+    document.querySelectorAll('#ai-emoji-grid .emoji-wrapper').forEach(wrapper => {
+        const img = wrapper.querySelector('img');
+        const name = wrapper.querySelector('.emoji-name').textContent;
+        if (img) {
+            aiEmojis.push({ src: img.src, name: name });
+        }
+    });
+
+    document.querySelectorAll('#user-emoji-grid .emoji-wrapper').forEach(wrapper => {
+        const img = wrapper.querySelector('img');
+        const name = wrapper.querySelector('.emoji-name').textContent;
+        if (img) {
+            userEmojis.push({ src: img.src, name: name });
+        }
+    });
+
+    const emojiData = {
+        ai: aiEmojis,
+        user: userEmojis
+    };
+
+    try {
+        localStorage.setItem('starEmojis', JSON.stringify(emojiData));
+    } catch (e) {
+        console.error('保存表情包失败', e);
+        showToast('表情包保存失败，可能是图片太大');
+    }
+}
+
+function loadEmojis() {
+    const savedData = localStorage.getItem('starEmojis');
+    if (!savedData) return;
+
+    try {
+        const data = JSON.parse(savedData);
+        
+        if (data.ai && Array.isArray(data.ai)) {
+            data.ai.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    addEmoji('ai', item.src, item.name);
+                } else {
+                    addEmoji('ai', item);
+                }
+            });
+        }
+
+        if (data.user && Array.isArray(data.user)) {
+            data.user.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    addEmoji('user', item.src, item.name);
+                } else {
+                    addEmoji('user', item);
+                }
+            });
+        }
+    } catch (e) {
+        console.error('加载表情包失败', e);
+    }
+}
+
+function handleAvatarUpload(event, imgElement) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imgElement.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function loadArchiveData() {
+    const savedData = localStorage.getItem('starArchiveData');
+    if (!savedData) return;
+
+    try {
+        const data = JSON.parse(savedData);
+        
+        // AI Data
+        if (data.ai) {
+            if (data.ai.name) document.getElementById('ai-name-input').value = data.ai.name;
+            if (data.ai.background) document.getElementById('ai-bg-input').value = data.ai.background;
+            if (data.ai.avatar) document.getElementById('ai-avatar-img').src = data.ai.avatar;
+        }
+
+        // User Data
+        if (data.user) {
+            if (data.user.name) document.getElementById('user-name-input').value = data.user.name;
+            if (data.user.background) document.getElementById('user-bg-input').value = data.user.background;
+            if (data.user.avatar) document.getElementById('user-persona-avatar-img').src = data.user.avatar;
+        }
+    } catch (e) {
+        console.error('加载档案数据失败', e);
+    }
+}
+
+// 表情包管理模式相关函数
+function enterManageMode() {
+    const grids = document.querySelectorAll('.emoji-grid');
+    grids.forEach(grid => grid.classList.add('managing'));
+    
+    const manageBtn = document.getElementById('manage-emoji-btn');
+    const closeBtn = document.getElementById('close-archive-btn');
+    const cancelBtn = document.getElementById('cancel-manage-btn');
+    
+    if (closeBtn) closeBtn.style.display = 'none';
+    if (cancelBtn) cancelBtn.style.display = 'flex';
+    
+    if (manageBtn) {
+        manageBtn.textContent = '删除';
+        manageBtn.style.opacity = '0.5';
+        manageBtn.style.pointerEvents = 'none';
+    }
+}
+
+function exitManageMode() {
+    const grids = document.querySelectorAll('.emoji-grid');
+    grids.forEach(grid => {
+        grid.classList.remove('managing');
+        // 清除选中状态
+        grid.querySelectorAll('.emoji-item.selected').forEach(item => item.classList.remove('selected'));
+    });
+    
+    const manageBtn = document.getElementById('manage-emoji-btn');
+    const closeBtn = document.getElementById('close-archive-btn');
+    const cancelBtn = document.getElementById('cancel-manage-btn');
+    
+    if (closeBtn) closeBtn.style.display = 'flex';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    
+    if (manageBtn) {
+        manageBtn.textContent = '管理';
+        manageBtn.style.color = '';
+        manageBtn.style.opacity = '1';
+        manageBtn.style.pointerEvents = 'auto';
+    }
+}
+
+function updateManageButtonState() {
+    const manageBtn = document.getElementById('manage-emoji-btn');
+    if (!manageBtn) return;
+    
+    const selectedCount = document.querySelectorAll('.emoji-item.selected').length;
+    if (selectedCount > 0) {
+        manageBtn.textContent = `删除(${selectedCount})`;
+        manageBtn.style.color = '#ff3b30'; // 红色警告色
+        manageBtn.style.opacity = '1';
+        manageBtn.style.pointerEvents = 'auto';
+    } else {
+        manageBtn.textContent = '删除';
+        manageBtn.style.color = ''; // 恢复默认色
+        manageBtn.style.opacity = '0.5';
+        manageBtn.style.pointerEvents = 'none';
+    }
+}
+
+function deleteSelectedEmojis() {
+    const selectedItems = document.querySelectorAll('.emoji-item.selected');
+    if (selectedItems.length === 0) return;
+    
+    showConfirmModal(`确定要删除选中的 ${selectedItems.length} 个表情包吗？`, () => {
+        selectedItems.forEach(item => {
+            // item 是 .emoji-item，它的父级是 .emoji-wrapper
+            const wrapper = item.closest('.emoji-wrapper');
+            if (wrapper) wrapper.remove();
+        });
+        
+        saveEmojis();
+        showToast(`已删除 ${selectedItems.length} 个表情包`);
+        exitManageMode();
+    });
+}
+
+// 通用模态框功能
+let confirmCallback = null;
+let promptCallback = null;
+
+function initUniversalModals() {
+    // 确认模态框
+    const confirmModal = document.getElementById('universal-confirm-modal');
+    const closeConfirmBtn = document.getElementById('close-confirm-modal');
+    const cancelConfirmBtn = document.getElementById('confirm-modal-cancel-btn');
+    const okConfirmBtn = document.getElementById('confirm-modal-ok-btn');
+
+    function closeConfirm() {
+        confirmModal.classList.remove('active');
+        confirmCallback = null;
+    }
+
+    if (closeConfirmBtn) closeConfirmBtn.addEventListener('click', closeConfirm);
+    if (cancelConfirmBtn) cancelConfirmBtn.addEventListener('click', closeConfirm);
+    
+    if (okConfirmBtn) {
+        okConfirmBtn.addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            closeConfirm();
+        });
+    }
+
+    if (confirmModal) {
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) closeConfirm();
+        });
+    }
+
+    // 输入模态框
+    const promptModal = document.getElementById('universal-prompt-modal');
+    const closePromptBtn = document.getElementById('close-prompt-modal');
+    const cancelPromptBtn = document.getElementById('prompt-modal-cancel-btn');
+    const okPromptBtn = document.getElementById('prompt-modal-ok-btn');
+    const promptInput = document.getElementById('prompt-modal-input');
+
+    function closePrompt() {
+        promptModal.classList.remove('active');
+        promptCallback = null;
+    }
+
+    if (closePromptBtn) closePromptBtn.addEventListener('click', closePrompt);
+    if (cancelPromptBtn) cancelPromptBtn.addEventListener('click', closePrompt);
+
+    if (okPromptBtn && promptInput) {
+        okPromptBtn.addEventListener('click', () => {
+            if (promptCallback) promptCallback(promptInput.value);
+            closePrompt();
+        });
+    }
+
+    if (promptModal) {
+        promptModal.addEventListener('click', (e) => {
+            if (e.target === promptModal) closePrompt();
+        });
+    }
+}
+
+function showConfirmModal(message, onConfirm, title = '确认', confirmText = '删除', confirmColor = '#ff3b30') {
+    const modal = document.getElementById('universal-confirm-modal');
+    const titleEl = document.getElementById('confirm-modal-title');
+    const messageEl = document.getElementById('confirm-modal-message');
+    const okBtn = document.getElementById('confirm-modal-ok-btn');
+
+    if (modal && titleEl && messageEl && okBtn) {
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+        okBtn.textContent = confirmText;
+        okBtn.style.background = confirmColor;
+        
+        confirmCallback = onConfirm;
+        modal.classList.add('active');
+    }
+}
+
+function showPromptModal(title, defaultValue, onConfirm, placeholder = '请输入...') {
+    const modal = document.getElementById('universal-prompt-modal');
+    const titleEl = document.getElementById('prompt-modal-title');
+    const inputEl = document.getElementById('prompt-modal-input');
+
+    if (modal && titleEl && inputEl) {
+        titleEl.textContent = title;
+        inputEl.value = defaultValue || '';
+        inputEl.placeholder = placeholder;
+        
+        promptCallback = onConfirm;
+        modal.classList.add('active');
+        inputEl.focus();
+    }
+}
+
+function initChatPage() {
+    const chatBtn = document.getElementById('icon-heart');
+    const chatPage = document.getElementById('chat-page');
+    const closeChatBtn = document.getElementById('close-chat-btn');
+    const sendBtn = document.getElementById('send-btn');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    
+    const chatPlusBtn = document.getElementById('chat-plus-btn');
+    const chatActionMenu = document.getElementById('chat-action-menu');
+    const chatStarBtn = document.getElementById('chat-star-btn');
+
+    // 打开聊天页面
+    if (chatBtn && chatPage) {
+        chatBtn.addEventListener('click', () => {
+            chatPage.classList.add('active');
+            // 滚动到底部
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+    }
+
+    // 关闭聊天页面
+    if (closeChatBtn && chatPage) {
+        closeChatBtn.addEventListener('click', () => {
+            chatPage.classList.remove('active');
+        });
+    }
+
+    // 扩展菜单逻辑
+    if (chatPlusBtn && chatActionMenu) {
+        chatPlusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            chatActionMenu.classList.toggle('active');
+            // 切换图标
+            const icon = chatPlusBtn.querySelector('i');
+            if (chatActionMenu.classList.contains('active')) {
+                icon.classList.remove('fa-plus');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-plus');
+            }
+        });
+
+        // 菜单项点击事件
+        const actionItems = chatActionMenu.querySelectorAll('.action-item');
+        actionItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const actionName = item.getAttribute('title');
+                showToast(`已选择：${actionName}`);
+                chatActionMenu.classList.remove('active');
+                const icon = chatPlusBtn.querySelector('i');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-plus');
+            });
+        });
+    }
+
+    // 五角星按钮点击事件
+    if (chatStarBtn) {
+        chatStarBtn.addEventListener('click', () => {
+            showToast('已收藏');
+        });
+    }
+
+    // 发送消息
+    function sendMessage() {
+        const text = chatInput.value.trim();
+        if (text) {
+            // 添加用户消息
+            addMessage(text, 'user');
+            chatInput.value = '';
+            
+            // 模拟 AI 回复
+            setTimeout(() => {
+                const responses = [
+                    "我听到了你的心声。",
+                    "这真是一个有趣的想法！",
+                    "星星在眨眼，仿佛在同意你的说法。",
+                    "记录下来，这会成为美好的回忆。",
+                    "无论发生什么，星空永远陪伴着你。"
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage(randomResponse, 'ai');
+            }, 1000);
+        }
+    }
+
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendMessage);
+    }
+
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
+
+    function addMessage(text, type) {
+        if (!chatMessages) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', type === 'user' ? 'user-message' : 'ai-message');
+        
+        let avatarSrc = '';
+        if (type === 'ai') {
+            // 获取 AI 头像
+            const aiAvatarImg = document.getElementById('ai-avatar-img');
+            avatarSrc = aiAvatarImg ? aiAvatarImg.src : 'https://api.dicebear.com/7.x/bottts/svg?seed=AI';
+        } else {
+            // 获取用户头像
+            const userAvatarImg = document.getElementById('user-persona-avatar-img');
+            avatarSrc = userAvatarImg ? userAvatarImg.src : 'https://api.dicebear.com/7.x/avataaars/svg?seed=User';
+        }
+
+        messageDiv.innerHTML = `
+            <div class="message-avatar">
+                <img src="${avatarSrc}" alt="${type}">
+            </div>
+            <div class="message-content">
+                ${text}
+            </div>
+        `;
+
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 }
