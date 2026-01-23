@@ -15,7 +15,6 @@
 <body>
     <div class="phone-wrapper">
         <div class="phone-case">
-            <div class="notch"></div>
             <div class="screen">
                 <!-- 背景星星层 -->
                 <div id="stars-container"></div>
@@ -216,20 +215,78 @@
                         <div class="wallpaper-section">
                             <div class="section-title">主屏幕壁纸</div>
                             <div class="wallpaper-card">
-                                <div class="wallpaper-preview">
-                                    <div class="preview-phone">
-                                        <div class="preview-screen" id="wallpaper-preview-screen"></div>
+                                <div class="wallpaper-previews-container">
+                                    <!-- 夜间模式 -->
+                                    <div class="wallpaper-preview-item">
+                                        <span class="preview-label">夜间模式</span>
+                                        <div class="wallpaper-preview" id="night-wallpaper-preview">
+                                            <div class="preview-phone">
+                                                <div class="preview-screen" id="wallpaper-preview-screen-night"></div>
+                                            </div>
+                                            <div class="upload-overlay">
+                                                <i class="fas fa-camera"></i>
+                                            </div>
+                                        </div>
+                                        <input type="file" id="wallpaper-upload-night" accept="image/*" style="display: none;">
+                                    </div>
+
+                                    <!-- 日间模式 -->
+                                    <div class="wallpaper-preview-item">
+                                        <span class="preview-label">日间模式</span>
+                                        <div class="wallpaper-preview" id="day-wallpaper-preview">
+                                            <div class="preview-phone">
+                                                <div class="preview-screen" id="wallpaper-preview-screen-day"></div>
+                                            </div>
+                                            <div class="upload-overlay">
+                                                <i class="fas fa-camera"></i>
+                                            </div>
+                                        </div>
+                                        <input type="file" id="wallpaper-upload-day" accept="image/*" style="display: none;">
                                     </div>
                                 </div>
-                                <div class="wallpaper-actions">
-                                    <button class="action-btn upload-btn" id="upload-wallpaper-btn">
-                                        <span>上传</span>
-                                        <input type="file" id="wallpaper-upload" accept="image/*" style="display: none;">
-                                    </button>
-                                    <button class="action-btn default-btn" id="reset-wallpaper-btn">
-                                        <span>恢复默认</span>
-                                    </button>
+                                
+                                <button class="action-btn default-btn" id="reset-wallpaper-btn">
+                                    <span>恢复默认</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="wallpaper-section">
+                            <div class="section-title">聊天背景</div>
+                            <div class="wallpaper-card">
+                                <div class="wallpaper-previews-container">
+                                    <!-- 夜间模式 -->
+                                    <div class="wallpaper-preview-item">
+                                        <span class="preview-label">夜间模式</span>
+                                        <div class="wallpaper-preview" id="chat-night-wallpaper-preview">
+                                            <div class="preview-phone">
+                                                <div class="preview-screen" id="chat-wallpaper-preview-screen-night"></div>
+                                            </div>
+                                            <div class="upload-overlay">
+                                                <i class="fas fa-camera"></i>
+                                            </div>
+                                        </div>
+                                        <input type="file" id="chat-wallpaper-upload-night" accept="image/*" style="display: none;">
+                                    </div>
+
+                                    <!-- 日间模式 -->
+                                    <div class="wallpaper-preview-item">
+                                        <span class="preview-label">日间模式</span>
+                                        <div class="wallpaper-preview" id="chat-day-wallpaper-preview">
+                                            <div class="preview-phone">
+                                                <div class="preview-screen" id="chat-wallpaper-preview-screen-day"></div>
+                                            </div>
+                                            <div class="upload-overlay">
+                                                <i class="fas fa-camera"></i>
+                                            </div>
+                                        </div>
+                                        <input type="file" id="chat-wallpaper-upload-day" accept="image/*" style="display: none;">
+                                    </div>
                                 </div>
+                                
+                                <button class="action-btn default-btn" id="reset-chat-wallpaper-btn">
+                                    <span>恢复默认</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -264,15 +321,15 @@
                             <div class="custom-icons-bubble">
                                 <div class="custom-icon-item" data-target="icon-diary">
                                     <div class="icon-preview"><i class="fas fa-book-open"></i></div>
-                                    <span>日记</span>
+                                    <span>星图</span>
                                 </div>
                                 <div class="custom-icon-item" data-target="icon-heart">
                                     <div class="icon-preview"><i class="fas fa-heart-pulse"></i></div>
-                                    <span>心跳</span>
+                                    <span>星语</span>
                                 </div>
                                 <div class="custom-icon-item" data-target="icon-file">
                                     <div class="icon-preview"><i class="fas fa-folder-open"></i></div>
-                                    <span>文件</span>
+                                    <span>档案</span>
                                 </div>
                                 <div class="custom-icon-item" data-target="icon-worldbook">
                                     <div class="icon-preview"><i class="fas fa-book"></i></div>
@@ -365,17 +422,334 @@
                     </div>
                 </div>
 
+                <!-- 档案页面 -->
+                <div class="settings-page" id="archive-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="close-archive-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="close-btn" id="cancel-manage-btn" style="display: none; width: auto; font-size: 16px;">
+                            取消
+                        </button>
+                        <h2>档案</h2>
+                        <button class="header-action-btn" id="save-archive-btn">
+                            保存
+                        </button>
+                        <button class="header-action-btn" id="manage-emoji-btn" style="display: none;">
+                            管理
+                        </button>
+                    </div>
+                    <div class="settings-content" id="archive-content-container">
+                        <div id="archive-persona-content">
+                            <!-- AI Persona -->
+                            <div class="persona-section">
+                                <div class="section-title">角色人设（AI Persona）</div>
+                                <div class="persona-bubble">
+                                    <div class="persona-header">
+                                        <div class="persona-avatar-container" id="ai-avatar-trigger">
+                                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AI" alt="AI Avatar" id="ai-avatar-img">
+                                            <input type="file" id="ai-avatar-upload" accept="image/*" style="display: none;">
+                                        </div>
+                                        <div class="persona-info">
+                                            <input type="text" class="persona-name-input" id="ai-name-input" placeholder="角色姓名">
+                                            <div class="persona-name-line"></div>
+                                        </div>
+                                    </div>
+                                    <textarea class="persona-bg-input" id="ai-bg-input" placeholder="在此输入角色人设背景..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- My Persona -->
+                            <div class="persona-section">
+                                <div class="section-title">我的人设（My Persona）</div>
+                                <div class="persona-bubble">
+                                    <div class="persona-header">
+                                        <div class="persona-avatar-container" id="user-persona-avatar-trigger">
+                                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" alt="User Avatar" id="user-persona-avatar-img">
+                                            <input type="file" id="user-persona-avatar-upload" accept="image/*" style="display: none;">
+                                        </div>
+                                        <div class="persona-info">
+                                            <input type="text" class="persona-name-input" id="user-name-input" placeholder="我的姓名">
+                                            <div class="persona-name-line"></div>
+                                        </div>
+                                    </div>
+                                    <textarea class="persona-bg-input" id="user-bg-input" placeholder="在此输入我的人设背景..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="archive-emoji-content" style="display: none;">
+                            <!-- AI Emoji -->
+                            <div class="persona-section">
+                                <div class="section-title">角色表情包</div>
+                                <div class="emoji-grid" id="ai-emoji-grid">
+                                    <div class="emoji-add-btn" id="add-ai-emoji-btn">
+                                        <i class="fas fa-plus"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- User Emoji -->
+                            <div class="persona-section">
+                                <div class="section-title">我的表情包</div>
+                                <div class="emoji-grid" id="user-emoji-grid">
+                                    <div class="emoji-add-btn" id="add-user-emoji-btn">
+                                        <i class="fas fa-plus"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 表情包上传模态框 -->
+                        <div class="modal-overlay" id="emoji-upload-modal">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h3>添加表情包</h3>
+                                    <button class="close-modal-btn" id="close-emoji-modal">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="upload-options">
+                                        <button class="upload-option-btn" id="upload-local-btn">
+                                            <i class="fas fa-image"></i>
+                                            <span>本地上传</span>
+                                        </button>
+                                        <button class="upload-option-btn" id="upload-url-btn">
+                                            <i class="fas fa-link"></i>
+                                            <span>URL 上传</span>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- URL 输入区域 -->
+                                    <div class="url-input-container" id="url-input-container" style="display: none; flex-direction: column;">
+                                        <textarea id="emoji-url-input" placeholder="输入格式：表情包名字:URL链接&#10;例如：&#10;开心:https://example.com/happy.png&#10;难过:https://example.com/sad.png"></textarea>
+                                        <button id="confirm-url-btn" style="width: 100%; margin-top: 10px; padding: 10px;">确认</button>
+                                    </div>
+
+                                    <input type="file" id="emoji-file-input" accept="image/*" multiple style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 名字修改模态框 -->
+                        <div class="modal-overlay" id="name-edit-modal">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h3>修改名字</h3>
+                                    <button class="close-modal-btn" id="close-name-modal">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="url-input-container" style="margin-top: 0;">
+                                        <input type="text" id="emoji-name-input" placeholder="输入新名字...">
+                                        <button id="confirm-name-btn">确认</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 底部切换气泡 -->
+                    <div class="archive-bottom-bar">
+                        <div class="toggle-bubble">
+                            <div class="toggle-item active" id="tab-persona" title="人设">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="toggle-divider"></div>
+                            <div class="toggle-item" id="tab-emoji" title="表情包">
+                                <i class="far fa-smile"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 世界书页面 -->
+                <div class="settings-page" id="worldbook-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="close-worldbook-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>世界书</h2>
+                        <div class="header-actions">
+                            <button class="header-icon-btn" id="add-folder-btn" title="新建文件夹">
+                                <i class="fas fa-folder-plus"></i>
+                            </button>
+                            <button class="header-icon-btn" id="add-worldbook-btn" title="新增世界书">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="empty-state" id="worldbook-empty-state">
+                            <i class="fas fa-book"></i>
+                            <p>这里将记录你的世界设定...</p>
+                        </div>
+                        
+                        <div class="folder-list" id="folder-list"></div>
+
+                        <!-- 新建文件夹模态框 -->
+                        <div class="modal-overlay" id="new-folder-modal">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h3>新建文件夹</h3>
+                                    <button class="close-modal-btn" id="close-folder-modal">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="url-input-container" style="margin-top: 0;">
+                                        <input type="text" id="folder-name-input" placeholder="输入文件夹名称...">
+                                        <button id="confirm-folder-btn">创建</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 新增世界书页面 -->
+                <div class="settings-page sub-page" id="add-worldbook-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="close-add-worldbook-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>新增世界书</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="form-group">
+                            <label>名称</label>
+                            <input type="text" id="worldbook-title-input" placeholder="输入名称...">
+                        </div>
+                        <div class="form-group">
+                            <label>选择文件夹</label>
+                            <div class="custom-select-wrapper">
+                                <div class="custom-select" id="folder-select">
+                                    <div class="custom-select-trigger">
+                                        <span id="selected-folder-text">无</span>
+                                        <i class="fas fa-chevron-down arrow"></i>
+                                    </div>
+                                    <div class="custom-options" id="folder-options">
+                                        <div class="custom-option selected" data-value="">无</div>
+                                        <!-- 动态生成 -->
+                                    </div>
+                                </div>
+                                <input type="hidden" id="selected-folder-value" value="">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>内容</label>
+                            <textarea class="css-input" id="worldbook-content-input" placeholder="输入内容..." style="height: 300px;"></textarea>
+                        </div>
+                        <button id="save-worldbook-item-btn" class="save-btn">保存</button>
+                    </div>
+                </div>
+
+                <!-- 聊天页面 -->
+                <div class="settings-page" id="chat-page">
+                    <div class="settings-header">
+                        <button class="close-btn" id="close-chat-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>星语</h2>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="message-time">刚刚</div>
+                            <div class="message ai-message">
+                                <div class="message-avatar">
+                                    <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AI" alt="AI">
+                                </div>
+                                <div class="message-content">
+                                    你好呀，我是星语。在这里记录你的想法吧...
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <!-- 扩展功能菜单 -->
+                            <div class="chat-action-menu" id="chat-action-menu">
+                                <div class="action-item" id="action-redo" title="重回">
+                                    <i class="fas fa-redo"></i>
+                                </div>
+                                <div class="action-item" id="action-emoji" title="表情包">
+                                    <i class="far fa-smile"></i>
+                                </div>
+                                <div class="action-item" id="action-voice" title="语音">
+                                    <i class="fas fa-microphone"></i>
+                                </div>
+                                <div class="action-item" id="action-image" title="图片">
+                                    <i class="far fa-image"></i>
+                                </div>
+                                <div class="action-item" id="action-camera" title="拍摄">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <div class="action-item" id="action-summary" title="总结">
+                                    <i class="fas fa-magic"></i>
+                                </div>
+                            </div>
+
+                            <button id="chat-plus-btn" class="icon-btn secondary-btn" style="background: transparent;">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <input type="text" id="chat-input" placeholder="发送消息...">
+                            <button id="chat-star-btn" class="icon-btn secondary-btn" style="background: transparent;">
+                                <i class="far fa-star"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 桌宠元素 -->
                 <div id="desktop-pet" class="desktop-pet" style="display: none;">
                     <img id="pet-image-display" src="" alt="Pet">
                     <div class="pet-bubble" id="pet-bubble">你好呀！</div>
                 </div>
 
+                <!-- 通用确认模态框 -->
+                <div class="modal-overlay" id="universal-confirm-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="confirm-modal-title">确认</h3>
+                            <button class="close-modal-btn" id="close-confirm-modal">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p id="confirm-modal-message" style="color: var(--text-color); margin-bottom: 20px; font-size: 14px; text-align: center;"></p>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="confirm-modal-cancel-btn" class="upload-option-btn" style="padding: 10px; flex: 1;">取消</button>
+                                <button id="confirm-modal-ok-btn" style="padding: 10px; flex: 1; background: #ff3b30; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 通用输入模态框 -->
+                <div class="modal-overlay" id="universal-prompt-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="prompt-modal-title">输入</h3>
+                            <button class="close-modal-btn" id="close-prompt-modal">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="url-input-container" style="margin-top: 0; flex-direction: column; gap: 15px;">
+                                <input type="text" id="prompt-modal-input" placeholder="请输入...">
+                                <div style="display: flex; gap: 10px; width: 100%;">
+                                    <button id="prompt-modal-cancel-btn" class="upload-option-btn" style="padding: 10px; flex: 1;">取消</button>
+                                    <button id="prompt-modal-ok-btn" style="padding: 10px; flex: 1; background: var(--accent-color); color: #000; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">确认</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 提示消息容器 -->
                 <div id="toast-container" class="toast-container"></div>
-
-                <!-- 底部指示条 -->
-                <div class="home-indicator"></div>
             </div>
         </div>
     </div>
